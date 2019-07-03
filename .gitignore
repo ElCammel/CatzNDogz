@@ -5,3 +5,4 @@ CNDApp/static/*.jpg
 app.db
 geckodriver.log
 .cache/
+.idea

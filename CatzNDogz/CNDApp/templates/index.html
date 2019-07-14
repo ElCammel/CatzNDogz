@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
-<head>
- <title>Is it a Cat or a dog ?</title>
-</head>
-<body>
- <h2>Upload your cat or dog image</h2>
- <form method ='post' enctype=multipart/form-data>
-  <input type="file" name="file">
-  <input type="submit" value="upload">
- </form>
-</body>
+    <head>
+        <title>Is it a Cat or a dog ?</title>
+    </head>
+    <body>
+        <h2>Upload your cat or dog image</h2>
+        <form method='post' action="/result" enctype="multipart/form-data" accept="image/*">
+            <input type="file" name="file"/>
+            <input type="submit" value="upload" onchange="this.form.submit();"/>
+        </form>
+    </body>
 </html>

@@ -6,3 +6,4 @@ app.db
 geckodriver.log
 .cache/
 .idea
+*.npy

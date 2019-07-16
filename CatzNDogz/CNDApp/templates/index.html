@@ -6,7 +6,12 @@
     <body>
         <h2>Upload your cat or dog image</h2>
         <form method='post' action="/result" enctype="multipart/form-data" accept="image/*">
-            <input type="file" name="file"/>
+            <p>Ajouter une ou plusieurs images</p>
+            <input type="file" name="files" required="required" multiple/>
+            <p>Ajouter un modèle</p>
+            <input type="file" name="model" required="required"/>
+
+            <p>Puis Validez !</p>
             <input type="submit" value="upload" onchange="this.form.submit();"/>
         </form>
     </body>

@@ -1,5 +1,6 @@
 import cv2  # working with, mainly resizing, images
 import matplotlib.pyplot as plt
+from tensorflow.python.keras.callbacks import TensorBoard
 from tensorflow.python.keras.optimizers import Adam
 import numpy as np  # dealing with arrays
 from tensorflow.python.keras.layers.convolutional import Conv2D, MaxPooling2D
@@ -9,10 +10,10 @@ from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 from sklearn.model_selection import train_test_split
 import os, random
 
-IMG_PATH = 'C:\\Users\\xlmgr\\Desktop\\Docs\\Cours\\Dataset\\'
+IMG_PATH = 'C:\\Users\\Greg\\Desktop\\Projets\\Dataset\\'
 IMG_SIZE = 75
 EPOCHS = 80
-BS = 32
+BS = 128
 CLASSES = 1
 INIT_LR = 1e-3
 
@@ -20,7 +21,7 @@ train_data = []
 train_labels = []
 test_data = []
 
-MODEL_NAME = 'C:\\Users\\xlmgr\\PycharmProjects\\CNDMakeModel\\CatzNDogz.model'
+MODEL_NAME = 'C:\\Users\\Greg\\Desktop\\Projets\\CatzNDogz\\CNDMakeModel\\CatzNDogz.model'
 
 def get_data():
     train_dir = IMG_PATH + 'train'
@@ -99,6 +100,7 @@ def train_model():
                   epochs=EPOCHS, verbose=1)
 
     model.save(MODEL_NAME)
+    tb_callback = TensorBoard("./logs/" + MODEL_NAME)
 
     plt.style.use("ggplot")
     plt.figure()
@@ -134,7 +136,8 @@ def predict():
 
         plt.subplot(4, 4, i +1)
         plt.title('This is a ' + text_labels[i])
-        imgplot = plt.imshow(batch[0])
+        img = batch[0]
+        imgplot = plt.imshow(img)
         i += 1
 
         if i % 10 == 0:
@@ -148,6 +151,6 @@ def predict():
 train_data = np.load('train_data.npy')
 train_labels = np.load('train_labels.npy')
 
-#train_model()
+train_model()
 
 predict()

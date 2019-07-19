@@ -7,22 +7,21 @@ import numpy as np  # dealing with arrays
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras.layers.core import Dense, Activation
 from tensorflow.python.keras.models import Sequential, load_model
-from tensorflow.python.keras.optimizers import Adam
-from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.python.keras.utils import to_categorical
+from tensorflow.python.layers.core import Dropout
 
 IMG_PATH = 'C:\\Users\\Greg\\Desktop\\Projets\\Dataset\\'
 IMG_SIZE = 75
-EPOCHS = 80
-BS = 128
-CLASSES = 1
-INIT_LR = 1e-3
+EPOCHS = 120
+BS = 500
+CLASSES = 2
 
 train_data = []
 train_labels = []
 test_data = []
 
-MODEL_NAME = 'C:\\Users\\xlmgr\\PycharmProjects\\CNDMakeModel\\CatzNDogz_mlp.model'
+MODEL_NAME = 'C:\\Users\\lamyg\\Desktop\\Projets\\CatzNDogz\\CNDMakeModel\\CatzNDogz_mlp.model'
+
 
 def get_data():
     train_dir = IMG_PATH + 'train'
@@ -39,13 +38,14 @@ def get_data():
 
     create_data(train_images, test_images)
 
+
 def create_data(train_images, test_images):
 
     for image in test_images:
-        test_data.append(cv2.resize(cv2.imread(image, cv2.IMREAD_COLOR), (1000, 5625)))
+        test_data.append(cv2.resize(cv2.imread(image, cv2.IMREAD_COLOR), (IMG_SIZE, IMG_SIZE)))
 
     for img in train_images:
-        train_data.append(cv2.resize(cv2.imread(img, cv2.IMREAD_COLOR), (1000, 5625)))
+        train_data.append(cv2.resize(cv2.imread(img, cv2.IMREAD_COLOR), (IMG_SIZE, IMG_SIZE)))
 
         if 'dog' in img:
             train_labels.append(1)
@@ -57,50 +57,55 @@ def create_data(train_images, test_images):
     np.save('test_images_mlp.npy', np.array(test_data))
 
 
-def make_model():
+def make_model(dimData):
     model = Sequential()
 
-    model.add(Dense(1024, input_shape=(5625,)))
+    model.add(Dense(1024, input_shape=(dimData,)))
     model.add(Activation("relu"))
+    model.add(Dropout(0.5))
+
+    model.add(Dense(1024))
+    model.add(Activation("relu"))
+    model.add(Dropout(0.5))
 
     model.add(Dense(CLASSES))
-    model.add(Activation("sigmoid"))
+    model.add(Activation("softmax"))
 
-    opt = Adam(lr=INIT_LR)
-    model.compile(loss="categorical_crossentropy", optimizer=opt,
+    model.compile(loss="categorical_crossentropy", optimizer='adam',
                   metrics=["accuracy"])
 
     return model
 
 
 def train_model():
-    dimData = np.prod(train_images.shape[1:])
-    print(dimData)
+    train_data = np.load('train_data.npy')
+    train_labels = np.load('train_labels.npy')
+    dimData = np.prod(train_data.shape[1:])
+
+    k = train_data.shape[0]
+    train_data = train_data.reshape(k, dimData)
+
+    train_data = train_data.astype('float32')
+    train_data /= 255
+
     (train_x, test_x, train_y, test_y) = train_test_split(train_data, train_labels, test_size=0.20, random_state=2)
-
-    train_datagen = ImageDataGenerator(rescale=1./255, rotation_range=40, width_shift_range=0.2, height_shift_range=0.2, shear_range=0.2,
-                             zoom_range=0.2, horizontal_flip=True)
-
-    val_datagen = ImageDataGenerator(rescale=1./255)
-
-    model = make_model()
 
     train_y = to_categorical(train_y)
     test_y = to_categorical(test_y)
 
-    H = model.fit_generator(train_datagen.flow(train_x, train_y, batch_size=BS),
-                  validation_data=val_datagen.flow(test_x, test_y, batch_size=BS), steps_per_epoch=len(train_x),
-                  epochs=test_x, verbose=1)
+    H = model = make_model(dimData)
+
+    model.fit(train_x, train_y, batch_size=BS, validation_data=(test_x, test_y), epochs=EPOCHS, verbose=1)
 
     model.save(MODEL_NAME)
 
     plt.style.use("ggplot")
     plt.figure()
     N = EPOCHS
-    plt.plot(np.arange(0, N), H.history["loss"], label="train_loss")
-    plt.plot(np.arange(0, N), H.history["val_loss"], label="val_loss")
-    plt.plot(np.arange(0, N), H.history["acc"], label="train_acc")
-    plt.plot(np.arange(0, N), H.history["val_acc"], label="val_acc")
+    plt.plot(np.arange(0, N), H.history.history["loss"], label="train_loss")
+    plt.plot(np.arange(0, N), H.history.history["val_loss"], label="val_loss")
+    plt.plot(np.arange(0, N), H.history.history["acc"], label="train_acc")
+    plt.plot(np.arange(0, N), H.history.history["val_acc"], label="val_acc")
     plt.title("Training Loss and Accuracy on Cat/Dog")
     plt.xlabel("Epoch #")
     plt.ylabel("Loss/Accuracy")
@@ -109,16 +114,22 @@ def train_model():
 
 
 def predict():
-    x_test = np.load('test_images_mlp.npy')[0:10]
+    x_test = np.load('test_images.npy')[0:10]
+    x_test = x_test.astype('float32')
+    x_test /= 255
+    dimData = np.prod(x_test.shape[1:])
+    k = x_test.shape[0]
+    x_test = x_test.reshape(8000, dimData)
+
 
     model = load_model(MODEL_NAME)
-    test_datagen = ImageDataGenerator(rescale=1.0/255)
+
     i=0
     text_labels = []
 
-    plt.figure(figsize=(75, 75))
+    plt.figure(figsize=(IMG_SIZE, IMG_SIZE))
 
-    for batch in test_datagen.flow(x_test, batch_size=1):
+    for batch in x_test:
         pred = model.predict(batch)
 
         if pred > 0.5:
@@ -137,11 +148,10 @@ def predict():
     plt.show()
 
 
-get_data()
+#get_data()
 
-train_data = np.load('train_data_mlp.npy')
-train_labels = np.load('train_labels_mlp.npy')
 
-train_model()
+
+#train_model()
 
 predict()
